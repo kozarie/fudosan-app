@@ -267,6 +267,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-ser
   <div class="card">
     <div class="card-head"><h2>📍 所在地・アクセス</h2><span class="badge badge-opt">任意</span></div>
     <div class="card-body">
+
+      <!-- 郵便番号自動入力 -->
+      <div class="field" style="margin-bottom:16px;">
+        <label>郵便番号で住所を自動入力</label>
+        <div class="input-row">
+          <input type="text" id="zipcode" placeholder="例: 1600022" maxlength="8" style="max-width:160px;" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9\-]/g,'')">
+          <button type="button" class="auto-btn" onclick="lookupZip()" style="padding:10px 16px;font-size:13px;">住所を自動入力</button>
+          <span id="zip_status" style="font-size:12px;color:var(--gray-500);"></span>
+        </div>
+        <span class="hint">7桁の数字（ハイフン不要）を入力して「住所を自動入力」をタップ</span>
+      </div>
+
       <div class="grid-2">
         <div class="field">
           <label>都道府県</label>
@@ -334,6 +346,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-ser
               <option value="沖縄県">沖縄県</option>
             </optgroup>
           </select>
+        </div>
+        <div class="field">
+          <label>市区町村</label>
+          <input type="text" id="city" placeholder="例: 新宿区">
+        </div>
+        <div class="field">
+          <label>町名・大字</label>
+          <input type="text" id="town" placeholder="例: 新宿">
+        </div>
+        <div class="field">
+          <label>丁目・番地・号</label>
+          <input type="text" id="chome" placeholder="例: 3丁目12番5号">
+        </div>
+        <div class="field">
+          <label>建物名・部屋番号（任意）</label>
+          <input type="text" id="building" placeholder="例: ○○マンション 505号室">
         </div>
         <div class="field">
           <label>最寄り駅 徒歩分数</label>
@@ -435,6 +463,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-ser
           <label>路線価</label>
           <div class="input-row"><input type="number" id="road_price" placeholder="例: 350" min="0"><span class="unit">千円/㎡</span></div>
           <div class="unk-row"><input type="checkbox" id="road_price_u" onchange="toggleUnk('road_price')" checked><label for="road_price_u">不明（担保評価参考値）</label></div>
+          <button type="button" class="auto-btn" onclick="window.open('https://www.rosenka.nta.go.jp/','_blank')" style="margin-top:8px;width:100%;text-align:center;">🔍 国税庁 路線価図を調べる（外部サイト）</button>
+          <span class="hint">↑ 国税庁サイトで物件の路線価を確認して上の欄に入力してください</span>
         </div>
         <div class="field">
           <label>固定資産税評価額</label>
@@ -875,6 +905,35 @@ function switchTab(n) {
     panels[i].style.display = i === 0 ? 'block' : 'none';
   }
 })();
+
+// ===== 郵便番号 → 住所自動入力 =====
+function lookupZip() {
+  var raw = document.getElementById('zipcode').value.replace(/[^0-9]/g, '');
+  var status = document.getElementById('zip_status');
+  if (raw.length !== 7) { status.textContent = '7桁の数字を入力してください'; status.style.color = '#dc2626'; return; }
+  status.textContent = '検索中…'; status.style.color = 'var(--gray-500)';
+  var url = 'https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + raw + '&callback=zipResult';
+  var s = document.createElement('script');
+  s.src = url;
+  document.head.appendChild(s);
+  s.onload = function() { document.head.removeChild(s); };
+  s.onerror = function() { status.textContent = '通信エラー。手動で入力してください'; status.style.color = '#dc2626'; document.head.removeChild(s); };
+}
+function zipResult(data) {
+  var status = document.getElementById('zip_status');
+  if (!data || data.status !== 200 || !data.results || !data.results[0]) {
+    status.textContent = '該当なし。手動で入力してください'; status.style.color = '#dc2626'; return;
+  }
+  var r = data.results[0];
+  var pref = document.getElementById('prefecture');
+  for (var i = 0; i < pref.options.length; i++) {
+    if (pref.options[i].value === r.address1) { pref.selectedIndex = i; break; }
+  }
+  document.getElementById('city').value = r.address2 || '';
+  document.getElementById('town').value = r.address3 || '';
+  document.getElementById('chome').value = '';
+  status.textContent = '住所を自動入力しました。丁目・番地を追記してください'; status.style.color = '#059669';
+}
 
 // ===== Unknown toggle =====
 function toggleUnk(id) {
