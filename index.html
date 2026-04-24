@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>不動産投資 利回り計算・投資判断アプリ</title>
+<style>
+:root {
+  --primary: #1a56db;
+  --primary-light: #eff6ff;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --border: #d1d5db;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: var(--gray-50); color: var(--gray-900); font-size: 14px; line-height: 1.6; }
+
+/* Header */
+.header { background: linear-gradient(135deg, #1a56db, #1e40af); color: white; padding: 20px 24px; }
+.header h1 { font-size: 20px; font-weight: 800; }
+.header p { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+
+/* Tabs */
+.tabs { background: white; border-bottom: 2px solid var(--gray-200); display: flex; padding: 0 16px; overflow-x: auto; }
+.tab { padding: 14px 18px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; font-size: 13px; font-weight: 600; color: var(--gray-500); white-space: nowrap; transition: all .2s; user-select: none; }
+.tab:hover { color: var(--primary); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-num { display: inline-flex; width: 18px; height: 18px; background: var(--gray-200); color: var(--gray-700); border-radius: 50%; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; margin-right: 5px; }
+.tab.active .tab-num { background: var(--primary); color: white; }
+
+/* Content */
+.tab-panel { display: none; max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+.tab-panel.active { display: block; }
+
+/* Cards */
+.card { background: white; border-radius: 10px; border: 1px solid var(--gray-200); margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.card-head { background: var(--gray-50); padding: 12px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: 8px; }
+.card-head h2 { font-size: 13px; font-weight: 700; color: var(--gray-700); }
+.badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 700; }
+.badge-req { background: #fee2e2; color: #dc2626; }
+.badge-opt { background: var(--gray-100); color: var(--gray-500); }
+.card-body { padding: 20px; }
+
+/* Fields grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.full { grid-column: 1 / -1; }
+
+/* Field */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 12px; font-weight: 700; color: var(--gray-700); display: flex; align-items: center; gap: 4px; }
+.field label .req { color: var(--danger); }
+.input-row { display: flex; align-items: center; gap: 6px; }
+.input-row input, .input-row select, .field select, .field input[type=number], .field input[type=text] {
+  flex: 1; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 7px; font-size: 13px; color: var(--gray-900); transition: border-color .2s, box-shadow .2s; background: white;
+}
+.input-row input:focus, .field input:focus, .field select:focus {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,219,.12);
+}
+.input-row input:disabled, .field input:disabled, .field select:disabled {
+  background: var(--gray-100); color: var(--gray-400); cursor: not-allowed;
+}
+.unit { font-size: 12px; color: var(--gray-500); white-space: nowrap; }
+.hint { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+
+/* Unknown toggle */
+.unk-row { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+.unk-row input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--gray-500); }
+.unk-row label { font-size: 11px; color: var(--gray-500); cursor: pointer; }
+
+/* Info box */
+.info-box { background: var(--primary-light); border: 1px solid #bfdbfe; border-radius: 7px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #1e40af; }
+
+/* Buttons */
+.calc-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 10px; font-size: 16px; font-weight: 800; cursor: pointer; transition: background .2s; margin-top: 8px; letter-spacing: .03em; }
+.calc-btn:hover { background: #1648c7; }
+.nav-row { display: flex; justify-content: space-between; margin-top: 20px; }
+.btn-back { background: white; color: var(--primary); border: 1.5px solid var(--primary); padding: 10px 24px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-next { background: var(--primary); color: white; border: none; padding: 10px 24px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-next:hover { background: #1648c7; }
+
+/* Auto-calc button */
+.auto-btn { font-size: 11px; padding: 4px 10px; background: var(--gray-100); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; color: var(--gray-700); white-space: nowrap; }
+.auto-btn:hover { background: var(--gray-200); }
+
+/* Results */
+.yield-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.yield-card { border: 2px solid var(--gray-200); border-radius: 10px; padding: 20px; text-align: center; }
+.yield-card.surface { border-color: #93c5fd; background: #eff6ff; }
+.yield-card.net { border-color: #6ee7b7; background: #ecfdf5; }
+.yield-label { font-size: 11px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: .08em; }
+.yield-value { font-size: 48px; font-weight: 900; margin: 6px 0; }
+.yield-card.surface .yield-value { color: #1d4ed8; }
+.yield-card.net .yield-value { color: #047857; }
+.yield-sub { font-size: 12px; color: var(--gray-500); }
+.meter { height: 8px; background: var(--gray-200); border-radius: 4px; margin: 10px 0 4px; overflow: hidden; }
+.meter-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+.meter-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--gray-400); }
+
+/* Judgment */
+.judgment { border-radius: 10px; padding: 24px; margin-bottom: 20px; border: 2px solid; }
+.judgment.buy { background: #ecfdf5; border-color: var(--success); }
+.judgment.caution { background: #fffbeb; border-color: var(--warning); }
+.judgment.avoid { background: #fef2f2; border-color: var(--danger); }
+.judgment-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 22px; border-radius: 100px; font-size: 18px; font-weight: 900; margin-bottom: 16px; }
+.judgment-badge.buy { background: var(--success); color: white; }
+.judgment-badge.caution { background: var(--warning); color: white; }
+.judgment-badge.avoid { background: var(--danger); color: white; }
+.score-section { margin: 12px 0 16px; }
+.score-label { font-size: 12px; color: var(--gray-700); font-weight: 600; margin-bottom: 6px; }
+.score-track { height: 12px; background: var(--gray-200); border-radius: 6px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 6px; transition: width .8s ease; }
+.score-fill.buy { background: var(--success); }
+.score-fill.caution { background: var(--warning); }
+.score-fill.avoid { background: var(--danger); }
+.score-val { font-size: 13px; color: var(--gray-700); margin-top: 4px; text-align: right; }
+
+/* Reason list */
+.reasons { margin-top: 16px; }
+.reasons h3 { font-size: 13px; font-weight: 700; color: var(--gray-700); margin-bottom: 8px; }
+.reason-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(0,0,0,.05); font-size: 13px; line-height: 1.5; }
+.reason-item:last-child { border-bottom: none; }
+.reason-icon { flex-shrink: 0; font-size: 14px; }
+
+/* Metrics grid */
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.metric { background: white; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px; text-align: center; }
+.metric .ml { font-size: 11px; color: var(--gray-500); font-weight: 600; }
+.metric .mv { font-size: 18px; font-weight: 800; color: var(--gray-900); margin: 4px 0; }
+.metric .ms { font-size: 11px; color: var(--gray-500); }
+
+/* Disclaimer */
+.disclaimer { background: var(--gray-100); border-radius: 7px; padding: 12px 16px; font-size: 11px; color: var(--gray-500); margin-top: 16px; line-height: 1.7; }
+
+/* Divider */
+.divider { border: none; border-top: 1px solid var(--gray-200); margin: 20px 0; }
+
+/* Select full width */
+.field select { width: 100%; }
+
+@media (max-width: 600px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .yield-cards, .metrics { grid-template-columns: 1fr; }
+  .full { grid-column: 1; }
+  .tab { padding: 12px 10px; font-size: 12px; }
+  .tab-num { width: 16px; height: 16px; font-size: 9px; }
+  .btn-next, .btn-back { padding: 14px 20px; font-size: 14px; min-height: 48px; }
+  .calc-btn { padding: 18px; font-size: 15px; min-height: 54px; }
+  .unk-row input[type=checkbox] { width: 20px; height: 20px; }
+  .unk-row label { font-size: 13px; }
+  .input-row input, .input-row select, .field select, .field input[type=number] { padding: 12px; font-size: 16px; }
+  .card-body { padding: 16px 12px; }
+}
+* { -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏢 不動産投資 利回り計算・投資判断アプリ</h1>
+  <p>表面利回り・実質利回りを算出し、プロ水準で投資判断を行います</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab(1)"><span class="tab-num">1</span>基本情報</div>
+  <div class="tab" onclick="switchTab(2)"><span class="tab-num">2</span>立地・法的</div>
+  <div class="tab" onclick="switchTab(3)"><span class="tab-num">3</span>収入・費用</div>
+  <div class="tab" onclick="switchTab(4)"><span class="tab-num">4</span>ローン・税務</div>
+  <div class="tab" onclick="switchTab(5)"><span class="tab-num">5</span>📊 結果・判断</div>
+</div>
+
+<!-- ===== TAB 1: 基本情報 ===== -->
+<div class="tab-panel active" id="tab1">
+  <div class="info-box">⭐ <strong>★マークは必須入力</strong>です。それ以外は「不明」にチェックを入れると概算値で計算します。</div>
+
+  <div class="card">
+    <div class="card-head"><h2>💰 物件価格・家賃</h2><span class="badge badge-req">必須</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>物件購入価格 <span class="req">★</span></label>
+          <div class="input-row"><input type="number" id="price" placeholder="例: 3500" min="0"><span class="unit">万円</span></div>
+        </div>
+        <div class="field">
+          <label>月額家賃（想定 or 実績）<span class="req">★</span></label>
+          <div class="input-row"><input type="number" id="monthly_rent" placeholder="例: 15" min="0" step="0.1"><span class="unit">万円</span></div>
+          <span class="hint">サブリース物件は実際に受け取る保証賃料を入力</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🏗️ 建物基本情報</h2><span class="badge badge-req">必須</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>築年数 <span class="req">★</span></label>
+          <div class="input-row"><input type="number" id="age_years" placeholder="例: 15" min="0" max="99"><span class="unit">年</span></div>
+        </div>
+        <div class="field">
+          <label>構造 <span class="req">★</span></label>
+          <select id="structure">
+            <option value="">選択してください</option>
+            <option value="wood">木造（耐用年数22年）</option>
+            <option value="light_steel">軽量鉄骨（耐用年数27年）</option>
+            <option value="heavy_steel">重量鉄骨（耐用年数34年）</option>
+            <option value="rc">RC造（耐用年数47年）</option>
+            <option value="src">SRC造（耐用年数47年）</option>
+            <option value="unknown">不明</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>延床面積 / 専有面積</label>
+          <div class="input-row"><input type="number" id="floor_area" placeholder="例: 65"><span class="unit">㎡</span></div>
+          <div class="unk-row"><input type="checkbox" id="floor_area_u" onchange="toggleUnk('floor_area')"><label for="floor_area_u">不明</label></div>
+        </div>
+        <div class="field">
+          <label>間取り</label>
+          <select id="madori">
+            <option value="">不明 / 選択</option>
+            <option value="1r">1R</option>
+            <option value="1k">1K</option>
+            <option value="1dk">1DK</option>
+            <option value="1ldk">1LDK</option>
+            <option value="2k">2K</option>
+            <option value="2dk">2DK</option>
+            <option value="2ldk">2LDK</option>
+            <option value="3ldk">3LDK</option>
+            <option value="4ldk">4LDK以上</option>
+            <option value="multi">一棟（複数戸）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>所在階 / 総階数</label>
+          <div class="input-row">
+            <input type="number" id="floor_num" placeholder="例: 3" min="1" style="width:70px;flex:none;">
+            <span class="unit">階 /</span>
+            <input type="number" id="floor_total" placeholder="例: 10" min="1" style="width:70px;flex:none;">
+            <span class="unit">階建</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>向き</label>
+          <select id="direction">
+            <option value="">不明</option>
+            <option value="s">南向き</option>
+            <option value="se">南東向き</option>
+            <option value="sw">南西向き</option>
+            <option value="e">東向き</option>
+            <option value="w">西向き</option>
+            <option value="n">北向き</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>📍 所在地・アクセス</h2><span class="badge badge-opt">任意</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>都道府県</label>
+          <select id="prefecture">
+            <option value="">選択してください</option>
+            <optgroup label="北海道・東北">
+              <option value="北海道">北海道</option>
+              <option value="青森県">青森県</option>
+              <option value="岩手県">岩手県</option>
+              <option value="宮城県">宮城県</option>
+              <option value="秋田県">秋田県</option>
+              <option value="山形県">山形県</option>
+              <option value="福島県">福島県</option>
+            </optgroup>
+            <optgroup label="関東">
+              <option value="茨城県">茨城県</option>
+              <option value="栃木県">栃木県</option>
+              <option value="群馬県">群馬県</option>
+              <option value="埼玉県">埼玉県</option>
+              <option value="千葉県">千葉県</option>
+              <option value="東京都">東京都</option>
+              <option value="神奈川県">神奈川県</option>
+            </optgroup>
+            <optgroup label="中部">
+              <option value="新潟県">新潟県</option>
+              <option value="富山県">富山県</option>
+              <option value="石川県">石川県</option>
+              <option value="福井県">福井県</option>
+              <option value="山梨県">山梨県</option>
+              <option value="長野県">長野県</option>
+              <option value="岐阜県">岐阜県</option>
+              <option value="静岡県">静岡県</option>
+              <option value="愛知県">愛知県</option>
+              <option value="三重県">三重県</option>
+            </optgroup>
+            <optgroup label="近畿">
+              <option value="滋賀県">滋賀県</option>
+              <option value="京都府">京都府</option>
+              <option value="大阪府">大阪府</option>
+              <option value="兵庫県">兵庫県</option>
+              <option value="奈良県">奈良県</option>
+              <option value="和歌山県">和歌山県</option>
+            </optgroup>
+            <optgroup label="中国">
+              <option value="鳥取県">鳥取県</option>
+              <option value="島根県">島根県</option>
+              <option value="岡山県">岡山県</option>
+              <option value="広島県">広島県</option>
+              <option value="山口県">山口県</option>
+            </optgroup>
+            <optgroup label="四国">
+              <option value="徳島県">徳島県</option>
+              <option value="香川県">香川県</option>
+              <option value="愛媛県">愛媛県</option>
+              <option value="高知県">高知県</option>
+            </optgroup>
+            <optgroup label="九州・沖縄">
+              <option value="福岡県">福岡県</option>
+              <option value="佐賀県">佐賀県</option>
+              <option value="長崎県">長崎県</option>
+              <option value="熊本県">熊本県</option>
+              <option value="大分県">大分県</option>
+              <option value="宮崎県">宮崎県</option>
+              <option value="鹿児島県">鹿児島県</option>
+              <option value="沖縄県">沖縄県</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field">
+          <label>最寄り駅 徒歩分数</label>
+          <div class="input-row"><input type="number" id="walk_min" placeholder="例: 8" min="0"><span class="unit">分</span></div>
+          <div class="unk-row"><input type="checkbox" id="walk_min_u" onchange="toggleUnk('walk_min')"><label for="walk_min_u">不明</label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <div></div>
+    <button type="button" class="btn-next" onclick="switchTab(2)">次へ：立地・法的 →</button>
+  </div>
+</div>
+
+<!-- ===== TAB 2: 立地・法的 ===== -->
+<div class="tab-panel" id="tab2">
+  <div class="info-box">⚠️ このセクションの項目は<strong>投資判断スコアに直接影響</strong>します。不明の場合でもなるべく確認してから入力してください。</div>
+
+  <div class="card">
+    <div class="card-head"><h2>🏛️ 耐震・権利関係</h2><span class="badge badge-req">重要</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>耐震基準</label>
+          <select id="seismic">
+            <option value="unknown">不明</option>
+            <option value="new">新耐震（1981年6月以降）</option>
+            <option value="old">旧耐震（1981年5月以前）</option>
+          </select>
+          <span class="hint">築44年以上は旧耐震の可能性が高い</span>
+        </div>
+        <div class="field">
+          <label>土地の権利</label>
+          <select id="land_right">
+            <option value="unknown">不明</option>
+            <option value="owned">所有権（土地を所有）</option>
+            <option value="futsuu">普通借地権</option>
+            <option value="teiki">定期借地権</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>地代（借地の場合）</label>
+          <div class="input-row"><input type="number" id="ground_rent" placeholder="例: 2" min="0" step="0.1"><span class="unit">万円/月</span></div>
+          <div class="unk-row"><input type="checkbox" id="ground_rent_u" onchange="toggleUnk('ground_rent')"><label for="ground_rent_u">不明 / 該当なし</label></div>
+        </div>
+        <div class="field">
+          <label>再建築</label>
+          <select id="rebuild">
+            <option value="unknown">不明</option>
+            <option value="yes">再建築可能</option>
+            <option value="no">再建築不可</option>
+          </select>
+          <span class="hint">接道2m未満は再建築不可の可能性</span>
+        </div>
+        <div class="field">
+          <label>既存不適格建築物</label>
+          <select id="non_compliant">
+            <option value="unknown">不明</option>
+            <option value="no">なし（適法）</option>
+            <option value="yes">あり（容積率/建蔽率オーバー等）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>アスベスト含有</label>
+          <select id="asbestos">
+            <option value="unknown">不明</option>
+            <option value="no">なし / 調査済み問題なし</option>
+            <option value="yes">あり</option>
+          </select>
+          <span class="hint">1987年以前の建物は要確認</span>
+        </div>
+        <div class="field">
+          <label>土壌汚染</label>
+          <select id="soil_contamination">
+            <option value="unknown">不明</option>
+            <option value="no">なし / 調査済み問題なし</option>
+            <option value="yes">あり</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>修繕履歴（大規模修繕）</label>
+          <select id="major_repair">
+            <option value="unknown">不明</option>
+            <option value="recent">直近10年以内に実施済み</option>
+            <option value="old">10年以上前 / 未実施</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🗺️ 立地条件</h2><span class="badge badge-opt">任意</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>路線価</label>
+          <div class="input-row"><input type="number" id="road_price" placeholder="例: 350" min="0"><span class="unit">千円/㎡</span></div>
+          <div class="unk-row"><input type="checkbox" id="road_price_u" onchange="toggleUnk('road_price')" checked><label for="road_price_u">不明（担保評価参考値）</label></div>
+        </div>
+        <div class="field">
+          <label>固定資産税評価額</label>
+          <div class="input-row"><input type="number" id="assessed_value" placeholder="例: 2000" min="0"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="assessed_value_u" onchange="toggleUnk('assessed_value')" checked><label for="assessed_value_u">不明（自動概算）</label></div>
+        </div>
+        <div class="field">
+          <label>角地（かどち）</label>
+          <select id="corner_lot">
+            <option value="unknown">不明</option>
+            <option value="no">角地ではない</option>
+            <option value="yes">角地（建蔽率+10%緩和）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>用途地域</label>
+          <select id="use_zone">
+            <option value="unknown">不明</option>
+            <option value="1teijuu">第一種低層住居専用地域</option>
+            <option value="2teijuu">第二種低層住居専用地域</option>
+            <option value="1chuko">第一種中高層住居専用地域</option>
+            <option value="2chuko">第二種中高層住居専用地域</option>
+            <option value="1jukyo">第一種住居地域</option>
+            <option value="2jukyo">第二種住居地域</option>
+            <option value="junko">準住居地域</option>
+            <option value="shogyo">商業・近隣商業地域</option>
+            <option value="kogyo">工業・準工業地域</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>容積率</label>
+          <div class="input-row"><input type="number" id="far" placeholder="例: 200" min="0"><span class="unit">%</span></div>
+          <div class="unk-row"><input type="checkbox" id="far_u" onchange="toggleUnk('far')" checked><label for="far_u">不明</label></div>
+        </div>
+        <div class="field">
+          <label>建蔽率</label>
+          <div class="input-row"><input type="number" id="bcr" placeholder="例: 60" min="0"><span class="unit">%</span></div>
+          <div class="unk-row"><input type="checkbox" id="bcr_u" onchange="toggleUnk('bcr')" checked><label for="bcr_u">不明</label></div>
+        </div>
+        <div class="field">
+          <label>接道状況</label>
+          <select id="road_access">
+            <option value="unknown">不明</option>
+            <option value="ok">問題なし（公道2m以上）</option>
+            <option value="private">私道接道</option>
+            <option value="insufficient">接道不足（再建築制限の可能性）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>ハザードマップ</label>
+          <select id="hazard">
+            <option value="unknown">不明</option>
+            <option value="safe">問題なし（リスクエリア外）</option>
+            <option value="flood">浸水リスクあり</option>
+            <option value="landslide">土砂災害リスクあり</option>
+            <option value="both">複数リスクあり</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>防火指定</label>
+          <select id="fire_zone">
+            <option value="unknown">不明</option>
+            <option value="none">指定なし</option>
+            <option value="semi">準防火地域</option>
+            <option value="fire">防火地域</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>📄 賃貸借・契約情報</h2><span class="badge badge-req">重要</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>賃貸借契約の種類</label>
+          <select id="lease_type">
+            <option value="unknown">不明</option>
+            <option value="normal">普通賃貸借（一般的）</option>
+            <option value="fixed">定期借家契約</option>
+          </select>
+          <span class="hint">定期借家は更新なし・中途解約制限あり</span>
+        </div>
+        <div class="field">
+          <label>サブリース契約</label>
+          <select id="sublease">
+            <option value="unknown">不明</option>
+            <option value="no">なし</option>
+            <option value="yes">あり</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>サブリース保証賃料</label>
+          <div class="input-row"><input type="number" id="sublease_rent" placeholder="例: 12.5" min="0" step="0.1"><span class="unit">万円/月</span></div>
+          <div class="unk-row"><input type="checkbox" id="sublease_rent_u" onchange="toggleUnk('sublease_rent')" checked><label for="sublease_rent_u">不明 / 該当なし</label></div>
+        </div>
+        <div class="field">
+          <label>家賃保証会社</label>
+          <select id="rent_guarantee">
+            <option value="unknown">不明</option>
+            <option value="yes">あり</option>
+            <option value="no">なし</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>現在の入居者の月額賃料（OC物件）</label>
+          <div class="input-row"><input type="number" id="current_rent" placeholder="例: 14" min="0" step="0.1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="current_rent_u" onchange="toggleUnk('current_rent')" checked><label for="current_rent_u">不明 / 新規募集</label></div>
+        </div>
+        <div class="field">
+          <label>管理組合 積立金の充足率</label>
+          <select id="reserve_fund">
+            <option value="unknown">不明</option>
+            <option value="sufficient">充足（長期修繕計画に対して十分）</option>
+            <option value="insufficient">不足（将来の一時金リスクあり）</option>
+            <option value="na">一棟 / 戸建てのため該当なし</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>設備グレード</label>
+          <select id="equipment">
+            <option value="unknown">不明</option>
+            <option value="high">高グレード（オートロック・独立洗面台・追い焚き等）</option>
+            <option value="standard">標準（エアコン・給湯器・バストイレ別）</option>
+            <option value="low">低グレード（設備古め・バストイレ同室等）</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button type="button" class="btn-back" onclick="switchTab(1)">← 戻る</button>
+    <button type="button" class="btn-next" onclick="switchTab(3)">次へ：収入・費用 →</button>
+  </div>
+</div>
+
+<!-- ===== TAB 3: 収入・費用 ===== -->
+<div class="tab-panel" id="tab3">
+  <div class="card">
+    <div class="card-head"><h2>💴 収入詳細</h2><span class="badge badge-opt">任意</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>管理費・共益費（入居者負担）</label>
+          <div class="input-row"><input type="number" id="common_fee" placeholder="例: 1" min="0" step="0.1"><span class="unit">万円/月</span></div>
+          <div class="unk-row"><input type="checkbox" id="common_fee_u" onchange="toggleUnk('common_fee')" checked><label for="common_fee_u">不明 / なし</label></div>
+        </div>
+        <div class="field">
+          <label>駐車場・駐輪場収入</label>
+          <div class="input-row"><input type="number" id="parking_income" placeholder="例: 1.5" min="0" step="0.1"><span class="unit">万円/月</span></div>
+          <div class="unk-row"><input type="checkbox" id="parking_income_u" onchange="toggleUnk('parking_income')" checked><label for="parking_income_u">不明 / なし</label></div>
+        </div>
+        <div class="field">
+          <label>その他付帯収入（自販機・看板等）</label>
+          <div class="input-row"><input type="number" id="other_income" placeholder="例: 0.5" min="0" step="0.1"><span class="unit">万円/月</span></div>
+          <div class="unk-row"><input type="checkbox" id="other_income_u" onchange="toggleUnk('other_income')" checked><label for="other_income_u">不明 / なし</label></div>
+        </div>
+        <div class="field">
+          <label>礼金（年平均換算）</label>
+          <div class="input-row"><input type="number" id="key_money" placeholder="例: 5" min="0" step="0.1"><span class="unit">万円/年</span></div>
+          <div class="unk-row"><input type="checkbox" id="key_money_u" onchange="toggleUnk('key_money')" checked><label for="key_money_u">不明 / なし</label></div>
+        </div>
+        <div class="field">
+          <label>更新料（年平均換算）</label>
+          <div class="input-row"><input type="number" id="renewal_fee" placeholder="例: 3" min="0" step="0.1"><span class="unit">万円/年</span></div>
+          <div class="unk-row"><input type="checkbox" id="renewal_fee_u" onchange="toggleUnk('renewal_fee')" checked><label for="renewal_fee_u">不明 / なし</label></div>
+        </div>
+        <div class="field">
+          <label>想定稼働率（空室率を差し引いた値）</label>
+          <div class="input-row"><input type="number" id="occupancy_rate" placeholder="90" min="0" max="100" value="90"><span class="unit">%</span></div>
+          <span class="hint">デフォルト90%（空室率10%相当）</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>📉 年間ランニングコスト</h2><span class="badge badge-opt">任意（概算自動入力可）</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>管理委託費率</label>
+          <div class="input-row"><input type="number" id="mgmt_rate" placeholder="5" min="0" max="30" value="5"><span class="unit">% / 家賃</span></div>
+          <span class="hint">相場3〜7%。自主管理の場合は0</span>
+        </div>
+        <div class="field">
+          <label>固定資産税・都市計画税（年間）</label>
+          <div class="input-row"><input type="number" id="property_tax" placeholder="自動計算" min="0" step="0.1"><span class="unit">万円/年</span></div>
+          <div class="unk-row"><input type="checkbox" id="property_tax_u" onchange="toggleUnk('property_tax')" checked><label for="property_tax_u">不明（物件価格の約1%で自動概算）</label></div>
+        </div>
+        <div class="field">
+          <label>マンション管理費（月額）</label>
+          <div class="input-row"><input type="number" id="condo_mgmt" placeholder="例: 1.5" min="0" step="0.1"><span class="unit">万円/月</span></div>
+          <div class="unk-row"><input type="checkbox" id="condo_mgmt_u" onchange="toggleUnk('condo_mgmt')" checked><label for="condo_mgmt_u">不明 / 一棟・戸建てのため不要</label></div>
+        </div>
+        <div class="field">
+          <label>修繕積立金（月額）</label>
+          <div class="input-row"><input type="number" id="repair_fund" placeholder="例: 1" min="0" step="0.1"><span class="unit">万円/月</span></div>
+          <div class="unk-row"><input type="checkbox" id="repair_fund_u" onchange="toggleUnk('repair_fund')" checked><label for="repair_fund_u">不明 / 一棟・戸建てのため不要</label></div>
+        </div>
+        <div class="field">
+          <label>火災・地震保険料（年間）</label>
+          <div class="input-row"><input type="number" id="insurance" placeholder="3" min="0" step="0.1"><span class="unit">万円/年</span></div>
+          <div class="unk-row"><input type="checkbox" id="insurance_u" onchange="toggleUnk('insurance')" checked><label for="insurance_u">不明（3万円/年で概算）</label></div>
+        </div>
+        <div class="field">
+          <label>修繕費・原状回復費（年平均）</label>
+          <div class="input-row"><input type="number" id="repair_cost" placeholder="自動計算" min="0" step="0.1"><span class="unit">万円/年</span></div>
+          <div class="unk-row"><input type="checkbox" id="repair_cost_u" onchange="toggleUnk('repair_cost')" checked><label for="repair_cost_u">不明（築年数から自動推計）</label></div>
+        </div>
+        <div class="field">
+          <label>大規模修繕積立（一棟の場合）</label>
+          <div class="input-row"><input type="number" id="large_repair" placeholder="例: 30" min="0" step="0.1"><span class="unit">万円/年</span></div>
+          <div class="unk-row"><input type="checkbox" id="large_repair_u" onchange="toggleUnk('large_repair')" checked><label for="large_repair_u">不明 / 区分マンションのため不要</label></div>
+        </div>
+        <div class="field">
+          <label>入居者募集コスト（AD・仲介料等）年平均</label>
+          <div class="input-row"><input type="number" id="recruit_cost" placeholder="自動計算" min="0" step="0.1"><span class="unit">万円/年</span></div>
+          <div class="unk-row"><input type="checkbox" id="recruit_cost_u" onchange="toggleUnk('recruit_cost')" checked><label for="recruit_cost_u">不明（家賃1ヶ月÷3年で概算）</label></div>
+        </div>
+        <div class="field">
+          <label>共用部 光熱費（月額）</label>
+          <div class="input-row"><input type="number" id="utility" placeholder="例: 0.5" min="0" step="0.1"><span class="unit">万円/月</span></div>
+          <div class="unk-row"><input type="checkbox" id="utility_u" onchange="toggleUnk('utility')" checked><label for="utility_u">不明 / なし</label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🧾 購入時コスト</h2><span class="badge badge-opt">任意（自動概算可）</span></div>
+    <div class="card-body">
+      <div class="info-box">「自動計算」ボタンを押すと物件価格から各費用の概算値を自動入力します。</div>
+      <div style="margin-bottom:12px;">
+        <button type="button" class="auto-btn" onclick="autoCalcAcqCosts()">🔄 購入諸費用を自動概算する</button>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>仲介手数料</label>
+          <div class="input-row"><input type="number" id="broker_fee" placeholder="自動計算" min="0" step="0.1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="broker_fee_u" onchange="toggleUnk('broker_fee')" checked><label for="broker_fee_u">不明（自動概算）</label></div>
+        </div>
+        <div class="field">
+          <label>登記費用（登録免許税＋司法書士）</label>
+          <div class="input-row"><input type="number" id="reg_fee" placeholder="自動計算" min="0" step="0.1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="reg_fee_u" onchange="toggleUnk('reg_fee')" checked><label for="reg_fee_u">不明（自動概算）</label></div>
+        </div>
+        <div class="field">
+          <label>不動産取得税</label>
+          <div class="input-row"><input type="number" id="acq_tax" placeholder="自動計算" min="0" step="0.1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="acq_tax_u" onchange="toggleUnk('acq_tax')" checked><label for="acq_tax_u">不明（自動概算）</label></div>
+        </div>
+        <div class="field">
+          <label>印紙税</label>
+          <div class="input-row"><input type="number" id="stamp_duty" placeholder="自動計算" min="0" step="0.1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="stamp_duty_u" onchange="toggleUnk('stamp_duty')" checked><label for="stamp_duty_u">不明（自動概算）</label></div>
+        </div>
+        <div class="field">
+          <label>ローン諸費用（手数料・保証料）</label>
+          <div class="input-row"><input type="number" id="loan_fee" placeholder="例: 30" min="0" step="0.1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="loan_fee_u" onchange="toggleUnk('loan_fee')" checked><label for="loan_fee_u">不明 / ローンなし</label></div>
+        </div>
+        <div class="field">
+          <label>購入時リフォーム費用</label>
+          <div class="input-row"><input type="number" id="renovation_cost" placeholder="例: 100" min="0" step="1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="renovation_cost_u" onchange="toggleUnk('renovation_cost')" checked><label for="renovation_cost_u">不明 / なし</label></div>
+        </div>
+        <div class="field">
+          <label>火災保険初期費用</label>
+          <div class="input-row"><input type="number" id="init_insurance" placeholder="3" min="0" step="0.1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="init_insurance_u" onchange="toggleUnk('init_insurance')" checked><label for="init_insurance_u">不明（3万円で概算）</label></div>
+        </div>
+        <div class="field">
+          <label>ホームインスペクション費用</label>
+          <div class="input-row"><input type="number" id="inspection_fee" placeholder="例: 5" min="0" step="0.1"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="inspection_fee_u" onchange="toggleUnk('inspection_fee')" checked><label for="inspection_fee_u">不明 / なし</label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button type="button" class="btn-back" onclick="switchTab(2)">← 戻る</button>
+    <button type="button" class="btn-next" onclick="switchTab(4)">次へ：ローン・税務 →</button>
+  </div>
+</div>
+
+<!-- ===== TAB 4: ローン・税務 ===== -->
+<div class="tab-panel" id="tab4">
+  <div class="card">
+    <div class="card-head"><h2>🏦 ローン・資金計画</h2><span class="badge badge-opt">任意</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field full">
+          <label>ローン利用</label>
+          <select id="use_loan" onchange="toggleLoanSection()">
+            <option value="no">現金購入（ローンなし）</option>
+            <option value="yes">ローンあり</option>
+          </select>
+        </div>
+        <div id="loan_section" style="display:none; grid-column:1/-1;">
+          <div class="grid-2">
+            <div class="field">
+              <label>自己資金</label>
+              <div class="input-row"><input type="number" id="equity" placeholder="例: 700" min="0"><span class="unit">万円</span></div>
+            </div>
+            <div class="field">
+              <label>借入額</label>
+              <div class="input-row"><input type="number" id="loan_amount" placeholder="例: 2800" min="0"><span class="unit">万円</span></div>
+            </div>
+            <div class="field">
+              <label>金利（年率）</label>
+              <div class="input-row"><input type="number" id="loan_rate" placeholder="例: 1.8" min="0" max="20" step="0.1" value="1.8"><span class="unit">%</span></div>
+            </div>
+            <div class="field">
+              <label>返済期間</label>
+              <div class="input-row"><input type="number" id="loan_term" placeholder="例: 30" min="1" max="50" value="30"><span class="unit">年</span></div>
+            </div>
+            <div class="field">
+              <label>返済方式</label>
+              <select id="repayment_type">
+                <option value="equal_payment">元利均等返済（毎月同額）</option>
+                <option value="equal_principal">元金均等返済（徐々に減少）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>団信（団体信用生命保険）保険料</label>
+              <div class="input-row"><input type="number" id="dansin" placeholder="例: 0（金利内包の場合）" min="0" step="0.1"><span class="unit">万円/年</span></div>
+              <div class="unk-row"><input type="checkbox" id="dansin_u" onchange="toggleUnk('dansin')" checked><label for="dansin_u">不明 / 金利に内包</label></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>💹 出口・将来シナリオ</h2><span class="badge badge-opt">任意</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>想定保有年数</label>
+          <div class="input-row"><input type="number" id="holding_years" placeholder="例: 10" min="1" max="50"><span class="unit">年</span></div>
+          <div class="unk-row"><input type="checkbox" id="holding_years_u" onchange="toggleUnk('holding_years')" checked><label for="holding_years_u">未定</label></div>
+        </div>
+        <div class="field">
+          <label>売却想定価格</label>
+          <div class="input-row"><input type="number" id="exit_price" placeholder="例: 3000" min="0"><span class="unit">万円</span></div>
+          <div class="unk-row"><input type="checkbox" id="exit_price_u" onchange="toggleUnk('exit_price')" checked><label for="exit_price_u">未定（IRR計算に使用）</label></div>
+        </div>
+        <div class="field">
+          <label>家賃下落率（年間）</label>
+          <div class="input-row"><input type="number" id="rent_decline" placeholder="例: 0.5" min="0" max="10" step="0.1" value="0.5"><span class="unit">%/年</span></div>
+          <span class="hint">デフォルト0.5%（都心は低め・地方は高め）</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>🧮 税務情報（参考）</h2><span class="badge badge-opt">任意</span></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>所有形態</label>
+          <select id="owner_type">
+            <option value="individual">個人</option>
+            <option value="corp">法人</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>所得税率（個人の場合）</label>
+          <select id="tax_rate">
+            <option value="unknown">不明</option>
+            <option value="5">5%（195万円以下）</option>
+            <option value="10">10%（195万〜330万円）</option>
+            <option value="20">20%（330万〜695万円）</option>
+            <option value="23">23%（695万〜900万円）</option>
+            <option value="33">33%（900万〜1800万円）</option>
+            <option value="40">40%（1800万〜4000万円）</option>
+            <option value="45">45%（4000万円超）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>青色申告</label>
+          <select id="blue_tax">
+            <option value="yes">青色申告（特別控除65万円）</option>
+            <option value="white">白色申告</option>
+            <option value="unknown">不明 / 未定</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <button type="button" class="calc-btn" onclick="calculate()">📊 利回りを計算して投資判断する</button>
+
+  <div class="nav-row">
+    <button type="button" class="btn-back" onclick="switchTab(3)">← 戻る</button>
+    <div></div>
+  </div>
+</div>
+
+<!-- ===== TAB 5: 結果 ===== -->
+<div class="tab-panel" id="tab5">
+  <div id="result-area">
+    <div style="text-align:center; padding:60px 20px; color:var(--gray-400);">
+      <div style="font-size:48px; margin-bottom:16px;">📊</div>
+      <p style="font-size:15px; font-weight:600;">タブ4の「計算する」ボタンを押してください</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Tab Navigation =====
+function switchTab(n) {
+  var tabs = document.querySelectorAll('.tab');
+  var panels = document.querySelectorAll('.tab-panel');
+  for (var i = 0; i < tabs.length; i++) {
+    panels[i].style.display = (i === n - 1) ? 'block' : 'none';
+    if (i === n - 1) {
+      tabs[i].classList.add('active');
+    } else {
+      tabs[i].classList.remove('active');
+    }
+  }
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+
+// 初期表示：最初のタブだけ表示、他は非表示
+(function() {
+  var panels = document.querySelectorAll('.tab-panel');
+  for (var i = 0; i < panels.length; i++) {
+    panels[i].style.display = i === 0 ? 'block' : 'none';
+  }
+})();
+
+// ===== Unknown toggle =====
+function toggleUnk(id) {
+  const cb = document.getElementById(id + '_u');
+  const el = document.getElementById(id);
+  if (!el || !cb) return;
+  el.disabled = cb.checked;
+}
+
+// Initialize all unknown checkboxes
+document.querySelectorAll('[id$="_u"]').forEach(cb => {
+  const fieldId = cb.id.replace('_u', '');
+  const el = document.getElementById(fieldId);
+  if (el) el.disabled = cb.checked;
+});
+
+// ===== Loan section toggle =====
+function toggleLoanSection() {
+  const v = document.getElementById('use_loan').value;
+  document.getElementById('loan_section').style.display = v === 'yes' ? 'block' : 'none';
+}
+
+// ===== Auto-calc acquisition costs =====
+function autoCalcAcqCosts() {
+  const price = parseFloat(document.getElementById('price').value) || 0;
+  if (price <= 0) { alert('先に物件購入価格を入力してください'); return; }
+
+  // Broker fee: 3% + 6万円（消費税10%）
+  const broker = Math.round((price * 0.03 + 6) * 1.1 * 10) / 10;
+  // Registration: ~0.5%
+  const reg = Math.round(price * 0.005 * 10) / 10;
+  // Acquisition tax: ~1.5%
+  const acq = Math.round(price * 0.015 * 10) / 10;
+  // Stamp duty
+  let stamp = 1;
+  if (price >= 10000) stamp = 4;
+  else if (price >= 5000) stamp = 2;
+  else if (price >= 1000) stamp = 1;
+  else stamp = 0.5;
+
+  const fields = { broker_fee: broker, reg_fee: reg, acq_tax: acq, stamp_duty: stamp };
+  for (const [id, val] of Object.entries(fields)) {
+    const el = document.getElementById(id);
+    const cb = document.getElementById(id + '_u');
+    if (el && cb) { cb.checked = false; el.disabled = false; el.value = val; }
+  }
+  alert('購入諸費用の概算を自動入力しました。実際の費用と照合してください。');
+}
+
+// ===== Helper functions =====
+function getNum(id, def = 0) {
+  const cb = document.getElementById(id + '_u');
+  if (cb && cb.checked) return def;
+  const el = document.getElementById(id);
+  if (!el) return def;
+  const v = parseFloat(el.value);
+  return isNaN(v) ? def : v;
+}
+
+function getSel(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+// ===== Main Calculation =====
+function calculate() {
+  const price = getNum('price');
+  const rent = getNum('monthly_rent');
+  const age = getNum('age_years');
+
+  if (price <= 0 || rent <= 0) {
+    alert('物件購入価格と月額家賃は必須です（タブ1）');
+    switchTab(1);
+    return;
+  }
+
+  // Regional benchmark
+  const pref = getSel('prefecture');
+  const urbanPrefs = ['東京都', '大阪府', '神奈川県', '愛知県', '埼玉県', '千葉県'];
+  const majorPrefs = ['北海道', '宮城県', '福岡県', '広島県', '京都府', '兵庫県', '静岡県', '新潟県', '岡山県', '熊本県'];
+  let bench;
+  if (urbanPrefs.includes(pref)) bench = { ex: 6, good: 4.5, ok: 3, poor: 2 };
+  else if (majorPrefs.includes(pref)) bench = { ex: 8, good: 6, ok: 4, poor: 3 };
+  else bench = { ex: 10, good: 8, ok: 5, poor: 3 };
+
+  // === 表面利回り ===
+  const grossYield = (rent * 12 / price) * 100;
+
+  // === 収入計算 ===
+  const occ = getNum('occupancy_rate', 90);
+  const sublease = getSel('sublease');
+  let effectiveRent = rent;
+  if (sublease === 'yes') {
+    const sr = getNum('sublease_rent', rent * 0.85);
+    effectiveRent = sr > 0 ? sr : rent * 0.85;
+  }
+  const annualIncome =
+    effectiveRent * 12 * (occ / 100)
+    + getNum('common_fee', 0) * 12
+    + getNum('parking_income', 0) * 12
+    + getNum('other_income', 0) * 12
+    + getNum('key_money', 0)
+    + getNum('renewal_fee', 0);
+
+  // === 費用計算 ===
+  const mgmtRate = getNum('mgmt_rate', 5) / 100;
+  const mgmtFee = effectiveRent * 12 * mgmtRate;
+
+  const propTaxDefault = price * 0.01;
+  const propertyTax = getNum('property_tax', propTaxDefault);
+
+  const condoMgmt = getNum('condo_mgmt', 0) * 12;
+  const repairFund = getNum('repair_fund', 0) * 12;
+  const insurance = getNum('insurance', 3);
+
+  let repDefault;
+  if (age <= 10) repDefault = rent * 12 * 0.02;
+  else if (age <= 20) repDefault = rent * 12 * 0.05;
+  else if (age <= 30) repDefault = rent * 12 * 0.08;
+  else repDefault = rent * 12 * 0.12;
+  const repairCost = getNum('repair_cost', repDefault);
+
+  const largeRepair = getNum('large_repair', 0);
+  const recruitDefault = rent / 3;
+  const recruitCost = getNum('recruit_cost', recruitDefault);
+  const utility = getNum('utility', 0) * 12;
+  const groundRent = getNum('ground_rent', 0) * 12;
+
+  const annualExpenses = mgmtFee + propertyTax + condoMgmt + repairFund
+    + insurance + repairCost + largeRepair + recruitCost + utility + groundRent;
+
+  // === 購入諸費用 ===
+  const calcBroker = (price * 0.03 + 6) * 1.1;
+  const brokerFee = getNum('broker_fee', calcBroker);
+  const regFee = getNum('reg_fee', price * 0.005);
+  const acqTax = getNum('acq_tax', price * 0.015);
+  const stampDefault = price >= 10000 ? 4 : price >= 5000 ? 2 : 1;
+  const stampDuty = getNum('stamp_duty', stampDefault);
+  const loanFee = getNum('loan_fee', 0);
+  const renovCost = getNum('renovation_cost', 0);
+  const initIns = getNum('init_insurance', 3);
+  const inspFee = getNum('inspection_fee', 0);
+
+  const totalAcqCost = brokerFee + regFee + acqTax + stampDuty + loanFee + renovCost + initIns + inspFee;
+  const totalInvestment = price + totalAcqCost;
+
+  // === 実質利回り ===
+  const netIncome = annualIncome - annualExpenses;
+  const netYield = (netIncome / totalInvestment) * 100;
+
+  // === ローン計算 ===
+  let annualLoanPayment = 0;
+  let monthlyLoanPayment = 0;
+  const useLoan = getSel('use_loan');
+  let loanAmount = 0;
+  if (useLoan === 'yes') {
+    loanAmount = getNum('loan_amount', 0);
+    const annualRate = getNum('loan_rate', 1.8) / 100;
+    const months = getNum('loan_term', 30) * 12;
+    if (loanAmount > 0 && months > 0) {
+      if (annualRate === 0) {
+        monthlyLoanPayment = loanAmount / months;
+      } else {
+        const r = annualRate / 12;
+        monthlyLoanPayment = loanAmount * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+      }
+      annualLoanPayment = monthlyLoanPayment * 12;
+    }
+  }
+  const annualCF = netIncome - annualLoanPayment;
+
+  // === 損益分岐空室率 ===
+  const breakevenOcc = annualExpenses / (effectiveRent * 12) * 100;
+  const breakevenVacancy = 100 - breakevenOcc;
+
+  // === スコア計算 ===
+  let score = 0;
+  const pos = [], warn = [], neg = [];
+
+  // Yield score (max 40)
+  if (netYield >= bench.ex) {
+    score += 40;
+    pos.push(`実質利回り ${fmt(netYield)}% — 当エリアの優良水準（${bench.ex}%以上）を達成しています`);
+  } else if (netYield >= bench.good) {
+    score += 30;
+    pos.push(`実質利回り ${fmt(netYield)}% — 当エリアの良好水準（${bench.good}%以上）です`);
+  } else if (netYield >= bench.ok) {
+    score += 18;
+    warn.push(`実質利回り ${fmt(netYield)}% — 当エリアの最低水準。費用削減・価格交渉の余地を検討してください`);
+  } else if (netYield >= bench.poor) {
+    score += 8;
+    neg.push(`実質利回り ${fmt(netYield)}% — 当エリア標準を下回っています（目標: ${bench.ok}%以上）`);
+  } else {
+    neg.push(`実質利回り ${fmt(netYield)}% — 非常に低く、投資効率が悪い状態です`);
+  }
+
+  // Risk adjustments (base 60)
+  let risk = 60;
+
+  const seismic = getSel('seismic');
+  if (seismic === 'new') { risk += 3; pos.push('新耐震基準適合 — 融資審査・保険料で有利です'); }
+  else if (seismic === 'old') { risk -= 15; neg.push('旧耐震基準（1981年以前）— 融資が付きにくく、地震保険料も割高になります'); }
+
+  const landRight = getSel('land_right');
+  if (landRight === 'owned') { risk += 2; pos.push('所有権物件 — 担保評価・売却のしやすさで有利です'); }
+  else if (landRight === 'futsuu') { risk -= 8; warn.push('普通借地権 — 地代が発生し、地主との関係が将来リスクになる可能性があります'); }
+  else if (landRight === 'teiki') { risk -= 15; neg.push('定期借地権 — 契約期間終了後に建物を取り壊す必要があり、出口が大幅に限定されます'); }
+
+  const rebuild = getSel('rebuild');
+  if (rebuild === 'yes') { risk += 2; pos.push('再建築可能 — 将来の建て替え・売却がしやすい状況です'); }
+  else if (rebuild === 'no') { risk -= 20; neg.push('再建築不可物件 — 担保価値が著しく低く、融資・売却が非常に困難です'); }
+
+  const nonComp = getSel('non_compliant');
+  if (nonComp === 'yes') { risk -= 10; neg.push('既存不適格建築物 — 増改築・融資・売却に制約が生じます'); }
+  else if (nonComp === 'no') { pos.push('適法建築物 — 法令上の問題なし'); }
+
+  const asbestos = getSel('asbestos');
+  if (asbestos === 'yes') { risk -= 10; neg.push('アスベスト含有あり — リフォーム・解体時に高額の除去費用が発生します'); }
+  else if (asbestos === 'no') { pos.push('アスベスト問題なし — リフォームコストリスクが低い'); }
+
+  const soil = getSel('soil_contamination');
+  if (soil === 'yes') { risk -= 20; neg.push('土壌汚染あり — 浄化費用が数千万円単位になる場合があります'); }
+
+  if (sublease === 'yes') { risk -= 8; warn.push('サブリース契約あり — 保証賃料・免責期間・解約条件を必ず精査してください'); }
+
+  const hazard = getSel('hazard');
+  if (hazard === 'flood' || hazard === 'landslide' || hazard === 'both') {
+    risk -= 5; warn.push('ハザードマップ上のリスクエリア — 保険料が高くなり、将来の売却価格にも影響する可能性があります');
+  }
+
+  const corner = getSel('corner_lot');
+  if (corner === 'yes') { risk += 3; pos.push('角地 — 建蔽率+10%緩和が適用され、建物の配置自由度と資産価値が向上します'); }
+
+  const resFund = getSel('reserve_fund');
+  if (resFund === 'insufficient') { risk -= 5; warn.push('修繕積立金が不足 — 将来の大規模修繕時に一時金（数十〜数百万円）が発生するリスクがあります'); }
+
+  const majorRep = getSel('major_repair');
+  if (majorRep === 'recent') { risk += 2; pos.push('直近10年以内に大規模修繕済み — 当面の修繕リスクが低い状態です'); }
+  else if (majorRep === 'old') { risk -= 3; warn.push('大規模修繕が10年以上前または未実施 — 近い将来に修繕が必要になる可能性があります'); }
+
+  if (age > 40) { risk -= 5; warn.push(`築${age}年 — 設備・躯体の老朽化により修繕コストが高まる時期です`); }
+  else if (age <= 10) { risk += 3; pos.push(`築${age}年 — 築浅で建物の状態が良好、修繕コストも低い時期です`); }
+
+  if (occ >= 95) { risk += 3; pos.push(`想定稼働率 ${occ}% — 非常に高い入居率を見込んでいます`); }
+  else if (occ < 80) { risk -= 5; warn.push(`想定稼働率 ${occ}% — 低め。空室リスクを慎重に評価してください`); }
+
+  const roadAcc = getSel('road_access');
+  if (roadAcc === 'insufficient') { risk -= 5; neg.push('接道不足 — 建築制限や担保評価低下のリスクがあります'); }
+
+  const leaseType = getSel('lease_type');
+  if (leaseType === 'fixed') { risk -= 3; warn.push('定期借家契約 — 更新がなく、期間終了時の空室リスクと家賃見直しリスクがあります'); }
+
+  const rentGuar = getSel('rent_guarantee');
+  if (rentGuar === 'yes') { risk += 2; pos.push('家賃保証会社あり — 賃料滞納リスクが軽減されています'); }
+
+  // Walking distance bonus/penalty
+  const walkMin = getNum('walk_min', 10);
+  const walkUnk = document.getElementById('walk_min_u') && document.getElementById('walk_min_u').checked;
+  if (!walkUnk) {
+    if (walkMin <= 5) { risk += 3; pos.push(`最寄り駅まで徒歩${walkMin}分 — 駅近で空室リスクが低く、高い賃料水準を維持しやすい`); }
+    else if (walkMin > 15) { risk -= 3; warn.push(`最寄り駅まで徒歩${walkMin}分 — 駅遠は空室率上昇・家賃下落リスクが高まります`); }
+  }
+
+  risk = Math.max(0, Math.min(60, risk));
+  score = Math.min(100, Math.max(0, score + risk));
+
+  // === 判定 ===
+  let jClass, jText, jIcon, jDesc;
+  if (score >= 65) {
+    jClass = 'buy'; jText = '買い推奨'; jIcon = '✅';
+    jDesc = '総合的に良好な投資案件です。利回り水準・物件条件ともに及第点以上を満たしています。';
+  } else if (score >= 45) {
+    jClass = 'caution'; jText = '要検討'; jIcon = '⚠️';
+    jDesc = '投資可能な水準ですが、リスク項目の確認と価格交渉によって条件改善が可能かを精査してください。';
+  } else {
+    jClass = 'avoid'; jText = '見送り推奨'; jIcon = '❌';
+    jDesc = '現状の条件では投資リターンが低すぎるか、重大なリスク項目が存在します。条件の大幅改善が必要です。';
+  }
+
+  // === Display ===
+  const gColor = grossYield >= bench.ex ? '#1d4ed8' : grossYield >= bench.ok ? '#0369a1' : '#dc2626';
+  const nColor = netYield >= bench.ex ? '#047857' : netYield >= bench.ok ? '#065f46' : '#dc2626';
+
+  const gMeter = Math.min(100, (grossYield / 15) * 100);
+  const nMeter = Math.min(100, (netYield / 12) * 100);
+  const sMeter = score;
+  const sfColor = jClass === 'buy' ? '#059669' : jClass === 'caution' ? '#d97706' : '#dc2626';
+
+  let reasonsHTML = '';
+  if (pos.length > 0) {
+    reasonsHTML += `<div class="reasons"><h3>✅ プラス要因</h3>`;
+    pos.forEach(r => reasonsHTML += `<div class="reason-item"><span class="reason-icon">◉</span><span>${r}</span></div>`);
+    reasonsHTML += `</div>`;
+  }
+  if (warn.length > 0) {
+    reasonsHTML += `<div class="reasons" style="margin-top:12px;"><h3>⚠️ 注意事項</h3>`;
+    warn.forEach(r => reasonsHTML += `<div class="reason-item"><span class="reason-icon">△</span><span>${r}</span></div>`);
+    reasonsHTML += `</div>`;
+  }
+  if (neg.length > 0) {
+    reasonsHTML += `<div class="reasons" style="margin-top:12px;"><h3>❌ リスク要因</h3>`;
+    neg.forEach(r => reasonsHTML += `<div class="reason-item"><span class="reason-icon">▲</span><span>${r}</span></div>`);
+    reasonsHTML += `</div>`;
+  }
+
+  let loanHTML = '';
+  if (useLoan === 'yes' && loanAmount > 0) {
+    const selfRatio = loanAmount > 0 ? Math.round((1 - loanAmount / price) * 100) : 100;
+    loanHTML = `
+      <div class="metrics">
+        <div class="metric"><div class="ml">年間ローン返済額</div><div class="mv">${fmtM(annualLoanPayment)}</div><div class="ms">万円/年</div></div>
+        <div class="metric"><div class="ml">月額ローン返済額</div><div class="mv">${fmtM(monthlyLoanPayment)}</div><div class="ms">万円/月</div></div>
+        <div class="metric"><div class="ml">返済後 年間CF</div><div class="mv" style="color:${annualCF >= 0 ? 'var(--success)' : 'var(--danger)'};">${fmtM(annualCF)}</div><div class="ms">万円/年</div></div>
+      </div>`;
+  }
+
+  document.getElementById('result-area').innerHTML = `
+    <div style="margin-bottom:20px;">
+      <h2 style="font-size:15px; font-weight:800; color:var(--gray-700); margin-bottom:16px;">📊 利回り計算結果</h2>
+      <div class="yield-cards">
+        <div class="yield-card surface">
+          <div class="yield-label">表面利回り（グロス）</div>
+          <div class="yield-value">${fmt(grossYield)}<span style="font-size:24px;">%</span></div>
+          <div class="meter"><div class="meter-fill" style="width:${gMeter}%; background:${gColor};"></div></div>
+          <div class="meter-labels"><span>0%</span><span>目安: ${bench.ok}%</span><span>15%</span></div>
+          <div class="yield-sub">年間家賃 ${fmtM(rent * 12)}万円 ÷ 物件価格 ${fmtM(price)}万円</div>
+        </div>
+        <div class="yield-card net">
+          <div class="yield-label">実質利回り（ネット）</div>
+          <div class="yield-value">${fmt(netYield)}<span style="font-size:24px;">%</span></div>
+          <div class="meter"><div class="meter-fill" style="width:${nMeter}%; background:${nColor};"></div></div>
+          <div class="meter-labels"><span>0%</span><span>目安: ${bench.ok}%</span><span>12%</span></div>
+          <div class="yield-sub">純収益 ${fmtM(netIncome)}万円 ÷ 総投資額 ${fmtM(totalInvestment)}万円</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric"><div class="ml">年間純収益</div><div class="mv">${fmtM(netIncome)}</div><div class="ms">万円/年</div></div>
+      <div class="metric"><div class="ml">年間総費用</div><div class="mv">${fmtM(annualExpenses)}</div><div class="ms">万円/年</div></div>
+      <div class="metric"><div class="ml">購入諸費用合計</div><div class="mv">${fmtM(totalAcqCost)}</div><div class="ms">万円</div></div>
+      <div class="metric"><div class="ml">総投資額</div><div class="mv">${fmtM(totalInvestment)}</div><div class="ms">万円</div></div>
+      <div class="metric"><div class="ml">損益分岐 空室率</div><div class="mv" style="color:${breakevenVacancy > 15 ? 'var(--success)' : 'var(--warning)'};">${fmt(Math.max(0, breakevenVacancy))}</div><div class="ms">% まで耐えられる</div></div>
+      <div class="metric"><div class="ml">費用 / 収入 比率</div><div class="mv">${fmt(annualExpenses / annualIncome * 100)}</div><div class="ms">%（低いほど良い）</div></div>
+    </div>
+
+    ${loanHTML}
+
+    <div class="judgment ${jClass}">
+      <div class="judgment-badge ${jClass}">${jIcon} ${jText}</div>
+      <div class="score-section">
+        <div class="score-label">総合投資スコア: <strong>${score} / 100点</strong></div>
+        <div class="score-track"><div class="score-fill ${jClass}" style="width:${sMeter}%;"></div></div>
+        <div class="score-val">${score >= 65 ? '買い推奨ライン(65)超え ✅' : score >= 45 ? '要検討ゾーン(45〜65)' : '見送り推奨ライン(45)未満 ❌'}</div>
+      </div>
+      <p style="font-size:13px; color:var(--gray-700); margin-bottom:12px;">${jDesc}</p>
+      ${reasonsHTML}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>📋 費用内訳</h2></div>
+      <div class="card-body">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <tr style="background:var(--gray-50);"><th style="text-align:left; padding:8px; border-bottom:1px solid var(--gray-200);">項目</th><th style="text-align:right; padding:8px; border-bottom:1px solid var(--gray-200);">金額（万円/年）</th></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">管理委託費</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(mgmtFee)}</td></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">固定資産税・都市計画税</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(propertyTax)}</td></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">マンション管理費・修繕積立金</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(condoMgmt + repairFund)}</td></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">火災・地震保険料</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(insurance)}</td></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">修繕費・原状回復費</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(repairCost)}</td></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">大規模修繕積立</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(largeRepair)}</td></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">入居者募集コスト</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(recruitCost)}</td></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">共用部光熱費・その他</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(utility)}</td></tr>
+          <tr><td style="padding:7px 8px; border-bottom:1px solid var(--gray-100);">地代（借地の場合）</td><td style="text-align:right; padding:7px 8px; border-bottom:1px solid var(--gray-100);">${fmtM(groundRent)}</td></tr>
+          <tr style="font-weight:700; background:var(--gray-50);"><td style="padding:8px;">合計</td><td style="text-align:right; padding:8px;">${fmtM(annualExpenses)}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      ⚠️ <strong>免責事項：</strong>本アプリの計算結果は参考値です。不明項目は概算値で補完しています。実際の投資判断は、不動産鑑定士・税理士・ファイナンシャルプランナー等の専門家へご相談ください。利回りや投資スコアは市場環境・個別条件により大きく変動します。
+    </div>
+  `;
+
+  switchTab(5);
+}
+
+function fmt(n) { return isNaN(n) ? '-' : n.toFixed(2); }
+function fmtM(n) { return isNaN(n) ? '-' : Math.round(n * 10) / 10; }
+</script>
+</body>
+</html>
